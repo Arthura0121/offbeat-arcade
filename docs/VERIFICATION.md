@@ -8,7 +8,7 @@ All **31 tests** pass, covering the three games, deterministic UTC dailies, reta
 
 Additional backend tests enumerate all constructed remix options and check that every accepted example satisfies its letter/word constraint. Invented plan IDs cannot become decks. Generated UN-membership rounds are tested for the same direct-reference retrieval as the base topic. A confident model verdict with an invented quote is rejected; a direct supporting reference can produce a provisional acceptance.
 
-`npm run build`, starter-bank validation and standalone-script syntax checks pass. The bank contains 40 Rarebird topics, 815 accepted answers and 150 additional aliases, plus the existing 1,235 word guesses and 12 grouping puzzles.
+`npm run build`, starter-bank validation and standalone-script syntax checks pass. The bank contains 40 Rarebird topics, 815 accepted answers and 150 additional aliases, plus the existing 1,235 word guesses and 24 grouping puzzles for new rounds (the original 12 are retained for saved-game replay).
 
 ## Browser checks
 
@@ -26,3 +26,5 @@ The deployed Worker reports both Workers AI and KV bindings ready. A real reques
 These checks establish personal game behavior and successful live inference. They do not establish anti-cheat protection, exhaustive answer coverage or infallible semantic AI judgment. Provider free limits can stop AI operations; curated rounds remain available. AI verdicts are provisional.
 
 The Cloudflare dashboard confirmed **Free — Current plan**. No paid upgrade was selected.
+
+Connections variety update: 32 tests pass, including every new puzzle solving, no-repeat practice bags, deterministic category order, all four positions used for source-final categories, and replay of legacy saved rounds. Nineteen of the 24 puzzles have no fill-in-the-blank category.

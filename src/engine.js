@@ -22,13 +22,15 @@ export function puzzle(bank, game, mode, key, options={}) {
     if(!/^u:[a-f0-9]{8}:\d{1,9}$/.test(key)) throw new Error('Invalid practice key');
     const [,salt,count]=key.split(':'); n=Number(count); seed=bank.version+':'+salt;
   }
-  const list=shuffle(game==='word'?bank.words:game==='groups'?bank.groups:bank.rare,seed+':'+game);
+  const groupPool=options.groupEdition===1?bank.groups:(bank.groupMix||bank.groups);
+  const list=shuffle(game==='word'?bank.words:game==='groups'?groupPool:bank.rare,seed+':'+game);
   // Daily word/group order is fixed for the bank release. Practice traverses a shuffled bag.
-  const stable=mode==='daily'?shuffle(game==='word'?bank.words:game==='groups'?bank.groups:bank.rare,bank.version+':daily:'+game):list;
+  const stable=mode==='daily'?shuffle(game==='word'?bank.words:game==='groups'?groupPool:bank.rare,bank.version+':daily:'+game):list;
   let rarePool=bank.rare;
   if(game==='rare'&&mode==='unlimited'){const preferred=bank.rare.filter(t=>(!options.theme||options.theme==='mixed'||t.theme===options.theme)&&(!options.level||options.level==='mixed'||t.level===options.level));const themed=bank.rare.filter(t=>!options.theme||options.theme==='mixed'||t.theme===options.theme);rarePool=preferred.length>=7?preferred:themed.length>=7?themed:bank.rare;}
   if(game==='rare'){const pool=shuffle(rarePool,seed+':'+n);if(mode==='daily'){const used=new Set();return ['easy','easy','mixed','easy','mixed','hard','easy'].map(level=>{const t=pool.find(t=>!used.has(t.id)&&t.level===level)||pool.find(t=>!used.has(t.id));used.add(t.id);return t;});}return pool.slice(0,7);}
-  return stable[((n%stable.length)+stable.length)%stable.length];
+  const chosen=stable[((n%stable.length)+stable.length)%stable.length];
+  return game==='groups'&&options.groupEdition!==1?{...chosen,groups:shuffle(chosen.groups,seed+':'+n+':category-order')}:chosen;
 }
 export function gradeWord(guess, answer) {
   const marks=Array(5).fill('absent'), pool=answer.split('');
@@ -40,7 +42,7 @@ export class GameError extends Error {}
 export function createSession(bank,game,mode,key,options={}) {
   puzzle(bank,game,mode,key);
   if(game==='rare'){if(options.deck&&(mode!=='unlimited'||!validDeck(options.deck)))throw new Error('Invalid AI deck');return {version:bank.version,game,mode,key,rules:RARE_RULES,pace:options.pace==='relaxed'?'relaxed':'classic',level:['easy','mixed','hard'].includes(options.level)?options.level:'mixed',theme:['mixed','nature','world','culture','science'].includes(options.theme)?options.theme:'mixed',...(options.deck?{deck:options.deck,roundId:options.roundId}:{}),actions:[]};}
-  return {version:bank.version,game,mode,key,actions:[]};
+  return {version:bank.version,game,mode,key,...(game==='groups'?{groupEdition:options.groupEdition===1?1:2}:{}),actions:[]};
 }
 export function view(bank,session) {
   const p=puzzle(bank,session.game,session.mode,session.key,session), actions=session.actions;
@@ -78,7 +80,7 @@ export function restore(bank, raw) {
   if(!raw||raw.version!==bank.version||!Array.isArray(raw.actions)||raw.actions.length>21) return null;
   try {
     if(raw.game==='rare'&&raw.rules!==RARE_RULES)return null;
-    let s=createSession(bank,raw.game,raw.mode,raw.key,raw);
+    let s=createSession(bank,raw.game,raw.mode,raw.key,{...raw,...(raw.game==='groups'?{groupEdition:raw.groupEdition===2?2:1}:{})});
     for(const a of raw.actions) s=play(bank,s,a);
     return s;
   } catch { return null; }
@@ -99,7 +101,7 @@ export function validateBank(bank) {
   }
   if(new Set(bank.words).size!==bank.words.length||bank.words.some(w=>typeof w!=='string'||!/^[A-Z]{5}$/.test(w))) errors.push('Invalid/duplicate five-letter word');
   ids.clear();
-  for(const p of bank.groups){
+  for(const p of [...bank.groups,...(bank.groupMix||[])]){
     if(!text(p.id)||ids.has(p.id))errors.push('Duplicate/missing group ID');ids.add(p.id);
     if(!Array.isArray(p.groups)||p.groups.length!==4) {errors.push('Expected four groups in '+p.id);continue;}
     const words=p.groups.flatMap(g=>g.words||[]);

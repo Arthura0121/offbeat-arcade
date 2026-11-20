@@ -11,7 +11,7 @@ test('daily puzzles are deterministic and UTC date rolls over globally',()=>{
 });
 test('practice word/group bags do not repeat until exhausted',()=>{
   for(const g of ['word','groups']){
-    const count=g==='word'?bank.words.length:bank.groups.length;
+    const count=g==='word'?bank.words.length:bank.groupMix.length;
     const values=Array.from({length:count},(_,i)=>puzzle(bank,g,'unlimited',`u:ab123456:${i}`));
     assert.equal(new Set(values.map(x=>x.id||x)).size,count);
   }
@@ -32,7 +32,7 @@ test('word dictionary, duplicate guess, win lock and six-guess loss',()=>{
   assert.throws(()=>play(bank,won,{word:guesses[0]}),/complete/);
 });
 test('all group puzzles solve correctly, reject duplicate and solved tiles',()=>{
-  for(let i=0;i<bank.groups.length;i++){
+  for(let i=0;i<bank.groupMix.length;i++){
     let s=session('groups','unlimited',`u:11111111:${i}`);const p=view(bank,s).p;
     assert.throws(()=>play(bank,s,{words:Array(4).fill(p.groups[0].words[0])}),/different/);
     s=play(bank,s,{words:p.groups[0].words});
@@ -55,4 +55,21 @@ test('saved-state replay rejects tampering, malformed input and post-win moves',
 test('bank checker rejects ambiguous aliases and repeated tiles',()=>{
   const b=structuredClone(bank);b.rare[0].answers[1].aliases.push(b.rare[0].answers[0].name);b.groups[0].groups[1].words[0]=b.groups[0].groups[0].words[0];
   const e=validateBank(b);assert.ok(e.some(x=>x.includes('alias')));assert.ok(e.some(x=>x.includes('unique tiles')));
+});
+
+test('new connections vary category positions and preserve old saved rounds',()=>{
+  const positions=new Set();
+  for(let i=0;i<bank.groupMix.length;i++){
+    const s=session('groups','unlimited',`u:abcd1234:${i}`),p=view(bank,s).p;
+    const original=bank.groupMix.find(x=>x.id===p.id);
+    positions.add(p.groups.findIndex(g=>g.label===original.groups[3].label));
+    assert.deepEqual(view(bank,restore(bank,s)).p,p);
+  }
+  assert.equal(positions.size,4);
+  assert.ok(bank.groupMix.filter(p=>p.groups.every(g=>!g.label.includes('___'))).length>=18);
+  let old=createSession(bank,'groups','unlimited','u:abcd1234:0',{groupEdition:1});
+  old=play(bank,old,{words:view(bank,old).p.groups[0].words});
+  const before=view(bank,old);delete old.groupEdition;
+  const replay=restore(bank,old);
+  assert.ok(replay);assert.deepEqual(view(bank,replay),before);
 });

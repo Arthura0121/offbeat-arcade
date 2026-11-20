@@ -99,3 +99,89 @@ export const bank = {
 const themeFor={greek:"culture","south-america":"world","one-letter":"science",zodiac:"culture",chess:"culture",planets:"science","si-base":"science",noble:"science",polygons:"science",dwarfs:"science","great-lakes":"world",rainbow:"science"};
 for(const t of bank.rare){t.finite=true;t.theme=themeFor[t.id]||"mixed";t.level=["si-base","one-letter","noble","greek","polygons"].includes(t.id)?"hard":"easy";t.hint="A familiar starting point: "+t.answers[0].name;}
 bank.rare=[...expandedRare,...bank.rare];
+
+// Keep the launch bank for replaying saved games; new sessions use a more varied edition.
+const alternateConnections = {
+ workshop:{label:'Palindromes',words:['LEVEL','CIVIC','RADAR','ROTOR']},
+ evening:{label:'Words that sound like letters',words:['BEE','QUEUE','WHY','EYE']},
+ picnic:{label:'Can be drawn',words:['BATH','CURTAIN','CONCLUSION','PORTRAIT']},
+ library:{label:'Made only of Roman numeral letters',words:['MIX','CIVIL','DIM','LIVID']},
+ outdoors:{label:'Anagrams of STOP',words:['POTS','POST','SPOT','TOPS']},
+ kitchen:{label:'Can be cracked',words:['CODE','JOKE','EGG','CASE']},
+ daydream:{label:'Silent K',words:['KNEE','KNIGHT','KNOT','KNOB']}
+};
+bank.groupMix = bank.groups.map(p=>({...p,id:'mix-'+p.id,groups:p.groups.map((g,i)=>i===3&&alternateConnections[p.id]?alternateConnections[p.id]:g)}));
+bank.groupMix.push(
+ {id:'mixed-signals',groups:[
+  {label:'Ways to say goodbye',words:['FAREWELL','ADIEU','CHEERIO','SO LONG']},
+  {label:'A little angry',words:['MIFFED','IRKED','PEEVED','SORE']},
+  {label:'Things with keys',words:['PIANO','MAP','LOCK','KEYBOARD']},
+  {label:'Musical tempos',words:['LARGO','ADAGIO','ALLEGRO','PRESTO']}
+ ]},
+ {id:'double-duty',groups:[
+  {label:'Parts of a shoe',words:['SOLE','HEEL','TONGUE','LACE']},
+  {label:'Types of race',words:['RELAY','MARATHON','SPRINT','STEEPLECHASE']},
+  {label:'Can be pitched',words:['TENT','IDEA','BALL','VOICE']},
+  {label:'Words with all five vowels, once each',words:['EDUCATION','FACETIOUS','ABSTEMIOUS','SEQUOIA']}
+ ]},
+ {id:'small-wonders',groups:[
+  {label:'Young animals',words:['KID','FOAL','CALF','JOEY']},
+  {label:'Fasteners',words:['RIVET','BOLT','SCREW','STAPLE']},
+  {label:'Units of information',words:['BIT','BYTE','KILOBYTE','MEGABYTE']},
+  {label:'Animals hiding in longer words',words:['SCOWL','CARPET','HENNA','FOXGLOVE']}
+ ]},
+ {id:'shift-work',groups:[
+  {label:'Change direction',words:['VEER','SWERVE','PIVOT','TURN']},
+  {label:'At the dentist',words:['FILLING','CROWN','BRIDGE','BRACES']},
+  {label:'Types of tea',words:['OOLONG','MATCHA','ASSAM','DARJEELING']},
+  {label:'Things you can strike',words:['MATCH','POSE','DEAL','BALANCE']}
+ ]},
+ {id:'sound-check',groups:[
+  {label:'Quiet, please',words:['HUSH','SHUSH','SILENCE','QUIET']},
+  {label:'Percussion instruments',words:['GONG','TIMPANI','MARIMBA','TAMBOURINE']},
+  {label:'Sound like a number',words:['WON','TOO','FOR','ATE']},
+  {label:'Ways to travel on water',words:['FERRY','KAYAK','RAFT','CATAMARAN']}
+ ]},
+ {id:'hidden-shapes',groups:[
+  {label:'Things with rings',words:['SATURN','TREE','CIRCUS','BINDER']},
+  {label:'Shades of blue',words:['COBALT','NAVY','AZURE','CERULEAN']},
+  {label:'Types of triangle',words:['ISOSCELES','SCALENE','EQUILATERAL','RIGHT']},
+  {label:'One letter away from a fruit',words:['PEACHY','GRIPE','PLUMP','PEARL']}
+ ]},
+ {id:'odd-jobs',groups:[
+  {label:'People who work with wood',words:['CARPENTER','COOPER','LUTHIER','WOODTURNER']},
+  {label:'On a weather forecast',words:['HUMIDITY','PRESSURE','VISIBILITY','WIND']},
+  {label:'Can be broken',words:['PROMISE','RECORD','HABIT','HEART']},
+  {label:'Birds that are also verbs',words:['DUCK','CRANE','SWALLOW','HAWK']}
+ ]},
+ {id:'take-a-bow',groups:[
+  {label:'Parts of a theater',words:['WINGS','STAGE','AISLE','BALCONY']},
+  {label:'Things in a quiver',words:['ARROW','BOLT','SHAFT','DART']},
+  {label:'Tied with a bow',words:['RIBBON','SHOELACE','SASH','BOW TIE']},
+  {label:'Words pronounced differently by meaning',words:['WIND','TEAR','LEAD','BASS']}
+ ]},
+ {id:'paper-trails',groups:[
+  {label:'Paper formats',words:['A4','LETTER','LEGAL','TABLOID']},
+  {label:'Ways to attach paper',words:['CLIP','STAPLE','GLUE','TAPE']},
+  {label:'Trees that are also first names',words:['WILLOW','ASH','ROWAN','ASPEN']},
+  {label:'Poker hands',words:['FLUSH','STRAIGHT','FULL HOUSE','TWO PAIR']}
+ ]},
+ {id:'out-of-order',groups:[
+  {label:'Anagrams of EAST',words:['EATS','SEAT','TEAS','SATE']},
+  {label:'Ways to arrange things',words:['STACK','LINE','PILE','ROW']},
+  {label:'Chess actions',words:['CASTLE','CAPTURE','PROMOTE','RESIGN']},
+  {label:'Four-sided shapes',words:['KITE','RHOMBUS','TRAPEZOID','RECTANGLE']}
+ ]},
+ {id:'quick-change',groups:[
+  {label:'Stages of a butterfly',words:['EGG','LARVA','PUPA','ADULT']},
+  {label:'Types of knot',words:['BOWLINE','CLOVE HITCH','SHEET BEND','REEF']},
+  {label:'Can follow double',words:['AGENT','DUTCH','TAKE','CHECK']},
+  {label:'Words meaning excellent',words:['STELLAR','SUPERB','TOPNOTCH','PRIMO']}
+ ]},
+ {id:'fresh-perspective',groups:[
+  {label:'Parts of a camera',words:['LENS','SHUTTER','SENSOR','VIEWFINDER']},
+  {label:'Words meaning to notice',words:['SPOT','CLOCK','ESPY','DETECT']},
+  {label:'Greek letters used in math',words:['PI','SIGMA','DELTA','THETA']},
+  {label:'Can be cast',words:['VOTE','SPELL','SHADOW','NET']}
+ ]}
+);
