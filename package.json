@@ -1,6 +1,6 @@
 {
   "name": "offbeat-arcade",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "description": "An original, free browser puzzle arcade. No accounts or API keys needed to play.",
   "type": "module",
@@ -13,6 +13,7 @@
     "check": "node scripts/validate.mjs",
     "build": "node scripts/build.mjs",
     "generate": "node scripts/generate.mjs",
-    "standalone": "node scripts/standalone.mjs"
+    "standalone": "node scripts/standalone.mjs",
+    "worker:bundle": "node scripts/bundle-worker.mjs"
   }
 }

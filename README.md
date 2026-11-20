@@ -1,58 +1,58 @@
 # Offbeat
 
-Three original puzzles for curious minds. Free daily and unlimited play, no sign-in, no API keys for players.
+**[Play the arcade](https://arthura0121.github.io/offbeat-arcade/)** · [Publish it yourself](docs/DEPLOY.md) · [Live AI, privacy and free limits](docs/AI-AND-COSTS.md)
 
-**[Play the arcade](https://Arthura0121.github.io/offbeat-arcade/)** · [Simple setup guide](docs/DEPLOY.md) · [AI and free hosting explained](docs/AI-AND-COSTS.md)
+Three original browser puzzles, free daily and unlimited play, no player accounts or keys.
 
-- **Rarebird:** five finite knowledge prompts. Less familiar accepted answers earn higher editorial scores. Clear scope, aliases, no lost turn for an unrecognized answer.
-- **Fivefold:** five-letter word deduction in six guesses. Repeated letters handled correctly, physical and touch keyboards, 1,235-word independently selected starter dictionary.
-- **Common Ground:** four original groups of four words; four mistakes, shuffle, selection feedback and “one away.”
+## Rarebird: The Midnight Dive
 
-All games have a shared UTC daily edition, unlimited practice, local progress, personal statistics and spoiler-free result sharing. Responsive layout, keyboard controls, focus indicators, modal focus management through native dialogs, reduced-motion support and no third-party fonts or analytics.
+An animated ocean expedition with an original pixel bird, bubbles, drifting sea life, a depth meter, rarity reveals and optional synthesized sound. Seven prompts per dive; every point explores another ten metres.
 
-## Start locally
+- Classic: 30 seconds per round, three lives. Only a timeout costs a life. Pass for zero points without losing a life.
+- Relaxed: no timer. Unlimited includes difficulty choices and nature, world, culture and science themes.
+- Hints show a familiar accepted answer and cap that round at 25 points.
+- Exact names and listed aliases work immediately. A unique one-character spelling match is offered for confirmation, never silently substituted.
+- Unlisted answers are automatically sent for a cloud AI reference check when the service is connected. A manual **Check with AI** button can retry. The timer pauses while checking; uncertainty or service failure never marks an answer wrong or costs a life.
+- **AI remix** in Unlimited asks AI to compose seven rounds from vetted topics and compatible letter/word constraints. Prompts and accepted examples are then constructed and checked by the server. Extra AI-checked answers remain provisional; AI can still make judgment errors.
 
-The downloadable ZIP also includes `Offbeat-play.html`: double-click it to try all three games without installing anything. This standalone copy embeds the same game and bank. Browser storage or clipboard access may be restricted for local files. Regenerate it with `npm run standalone` after code changes. Use the modular source for GitHub deployment.
+The local starter bank now has **40 topics**, including broad everyday prompts with 815 accepted answers and 150 additional aliases. Its familiarity tiers remain estimates, not measured player popularity. Daily Rarebird balances four easy, two mixed and one hard prompt. The new `dive-2` rules begin a fresh Rarebird edition; existing Fivefold and Common Ground daily choices and progress remain compatible.
 
-Install Node.js 22 or newer from [nodejs.org](https://nodejs.org/), open a terminal in this folder, and run:
+## Fivefold and Common Ground
+
+Fivefold offers five-letter deduction with correct repeated-letter handling, physical/touch keyboards and staggered tile flips. Its original starter dictionary contains 1,235 common words.
+
+Common Ground offers twelve original grouping puzzles, four mistakes, selection pops, shuffle motion, wrong-group feedback and animated solved groups. Both retain daily and unlimited play, local progress and spoiler-free sharing. Reduced-motion settings disable decorative movement throughout the arcade. Sound is off by default and can be enabled in Rarebird.
+
+## Try or edit locally
+
+The downloadable ZIP contains `Offbeat-play.html`: double-click it for a standalone copy with curated gameplay. Browser restrictions can limit file-based storage and cloud AI; use the hosted site for live AI.
+
+For the modular source, install [Node.js 22+](https://nodejs.org/), open a terminal here, and run:
 
 ```sh
 npm start
 ```
 
-Open the printed address, normally `http://127.0.0.1:4173`. Stop with Ctrl+C. No `npm install` is needed. Opening `index.html` directly as a file will not work reliably because browsers restrict module imports; use the preview server or GitHub Pages.
+Open the printed address. No dependency installation is needed.
 
 ```sh
-npm test          # game rules, saved-state replay, bank checks, candidate validation
-npm run check    # validate the published bank
-npm run build    # create the static site in dist/
+npm test                # game rules, saved-state replay, AI shapes and service failure paths
+npm run check           # starter bank integrity
+npm run build           # static GitHub Pages site in dist/
+npm run standalone      # standalone HTML copy
+npm run worker:bundle   # one-file backend for the Cloudflare dashboard
 ```
 
-## Put it on GitHub Pages
+## Hosting and AI
 
-See [the step-by-step guide](docs/DEPLOY.md). The included workflow checks the games, builds `dist/`, and deploys it. All asset paths are relative, so both project URLs and custom domains work. GitHub Pages serves only the game assets; AI tokens and maintenance scripts are not part of the built site.
+The frontend deploys from GitHub to GitHub Pages. The live AI service is a separate Cloudflare Worker using Workers AI and a KV puzzle cache. It accepts only known local topics or server-created expedition IDs; visitors cannot submit arbitrary system prompts or model choices. No provider token is shipped to players. Source is in `cloud/worker.js`; `cloud/wrangler.jsonc` records the public binding configuration.
 
-## Puzzle content and honest limits
+AI remixes are shared/cached by UTC day, theme, difficulty and one of four variations. Free-service usage is capped; local gameplay has no play cap and continues if AI is unavailable. See [the operational guide](docs/AI-AND-COSTS.md) for exact behavior, data retention, backend setup and limitations. Optional maintainer-only batch drafting is also preserved and never auto-publishes drafts.
 
-The starter bank contains 12 Rarebird topics, 1,235 words, and 12 complete grouping puzzles. Unlimited means no paywall or play cap; the finite bank eventually repeats. Word and grouping practice cycle through a shuffled bag before repeating. Rarebird samples five distinct topics per round; topics can recur in consecutive rounds.
+## Score correctness and honest limits
 
-Daily puzzles use a deterministic UTC date and immutable bank version. A day does not depend on a visitor's local time. Do not change an existing bank release in place: publish a new version, preferably at 00:00 UTC, and announce that it starts a fresh edition. New bank versions reset current-edition progress and statistics; old saved data remains in the browser. There is no automatic fresh-content generation in v1.
+Scores and lives are recomputed from validated moves. Hint caps, timeouts, aliases, input-bound AI review shapes and terminal-state checks are tested. AI-created decks and provisional review objects are bounded and checked before use. This is **personal score correctness, not anti-cheat**: the frontend and local data can be edited, and AI assessments are not guaranteed facts. There are no competitive leaderboards, multiplayer, synced accounts or claims of measured rarity.
 
-Rarebird is a factual finite-set game. Unknown answers are rejected without penalty, never guessed by an LLM. Its 10/25/50/100-point tiers are human editorial familiarity estimates, not measured rarity or objective difficulty. They are visible in the post-game answer review.
+Curated banks eventually repeat. Human review remains necessary for adding new trusted daily puzzles. Keep original release data in version control and change editions deliberately. Do not copy another publisher's branding, art, interface assets or puzzle sets.
 
-All scores are calculated from validated moves; stored scores and completion flags are ignored. This is **personal score correctness, not anti-cheat**: a static public website ships its solutions, and browser data can be edited. There are no global rankings, accounts, multiplayer or device syncing. [The backend path](docs/AI-AND-COSTS.md) explains what those would require.
-
-## Add vetted content
-
-Edit `data/bank.js`, run the checks, and review the content before releasing a new bank version. An optional Cloudflare Workers AI script and a manual GitHub Actions workflow create an **unreviewed draft artifact only**. They cannot edit or deploy the live bank. Read [the review workflow and free-tier comparison](docs/AI-AND-COSTS.md) before enabling it. AI is not required to run or play the arcade.
-
-## Project map
-
-- `src/engine.js`: deterministic puzzles, scoring, move validation, safe saved-state replay, bank validation.
-- `src/app.js`, `style.css`, `index.html`: responsive arcade and game screens.
-- `data/bank.js`: original starter puzzles, aliases, scope and factual source references.
-- `scripts/`: preview, static build, validation and optional AI draft generation.
-- `tests/`: meaningful game-rule and content-pipeline regression checks.
-- `.github/workflows/`: Pages deployment and optional manual AI drafts.
-
-Original branding, bird illustration, interface and puzzle sets. No affiliation with other puzzle publishers. Code and original content are provided under the MIT license; external references retain their own rights.
+Code, original artwork and original puzzle sets are provided under the MIT license. Independent project; no affiliation with other puzzle publishers.

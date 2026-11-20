@@ -1,20 +1,26 @@
-# Verification of the first version
+# Rarebird v2 verification
 
-Verified locally on November 19, 2026 (America/New_York).
+Verified November 19, 2026 (America/New_York).
 
-## Automated
+## Automated checks
 
-`npm test`: all 12 tests passed. Coverage includes repeated-letter allocation, six-guess losses and win locking, finite Rarebird answer lookup and aliases, post-completion rejection, invalid saved-state replay, score recomputation, deterministic UTC dailies, practice bag cycling, all grouping-puzzle solutions, duplicate/wrong-group handling, starter bank integrity and rejection of malformed AI drafts.
+All **30 tests** pass, covering the three games, deterministic UTC dailies, retained word/group practice bags, save replay, aliases and explicit typo suggestions, seven-round completion, hint score caps, three-timeout termination, no penalty for unlisted answers, bounded input-linked provisional reviews, invalid AI decks, CORS, body-size limits, provider/quota failures and source-host restrictions.
 
-`npm run check` and `npm run build` passed. The bank contains 12 rare-answer topics, 1,235 words and 12 grouping puzzles. The build has no third-party dependencies. A real AI request has not been tested: no Cloudflare credentials have been supplied.
+Additional backend tests enumerate all constructed remix options and check that every accepted example satisfies its letter/word constraint. Invented plan IDs cannot become decks. A confident model verdict with an invented quote is rejected; a direct supporting reference can produce a provisional acceptance.
+
+`npm run build`, starter-bank validation and standalone-script syntax checks pass. The bank contains 40 Rarebird topics, 815 accepted answers and 150 additional aliases, plus the existing 1,235 word guesses and 12 grouping puzzles.
 
 ## Browser checks
 
-- Completed the full daily Rarebird round; rejected an unknown answer with no turn lost; confirmed case-insensitive answer aliases and a 400/500 result.
-- Refreshed mid-round and resumed at the correct prompt and score.
-- Completed Fivefold after a non-winning guess; confirmed colored letter feedback and the win result.
-- Completed all four Common Ground groups with no mistakes; verified the solved groups are removed from the remaining tiles.
-- Verified personal completed-round counts and spoiler-free copy feedback.
-- Checked Common Ground at an actual 390-pixel layout viewport: document width 390 pixels, no horizontal overflow.
+- Completed a seven-round relaxed dive at **450 points / 4,500 metres**.
+- Checked a hint and its 25-point cap, then a one-character spelling suggestion that required explicit confirmation.
+- Confirmed Fivefold applies its staggered `flip-letter` animation to all five newly revealed tiles.
+- Confirmed Common Ground's one-away feedback, selected-tile behavior and solved-group `celebrate-group` animation.
+- Checked the dive at a 390-pixel viewport: page width was 390, with no horizontal overflow.
+- The stylesheet disables decorative animations and transitions under `prefers-reduced-motion`; sound is off by default.
 
-The tests establish game-rule behavior and personal score correctness, not protection against cheating. The answer bank is public and browser storage is user-controlled. AI draft structural validation does not prove factual truth or puzzle quality.
+## Real cloud tests
+
+The deployed Worker reports both Workers AI and KV bindings ready. A real request to the supported free-tier model composed a seven-round nature/easy expedition from vetted topic options. A real reference-backed check accepted **Albania** for the UN-member-state prompt, despite its absence from the starter answer list, and included a supporting quotation found in the reference.
+
+These checks establish personal game behavior and successful live inference. They do not establish anti-cheat protection, exhaustive answer coverage or infallible semantic AI judgment. Provider free limits can stop AI operations; curated rounds remain available. AI verdicts are provisional.

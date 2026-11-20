@@ -1,3 +1,4 @@
+import {expandedRare} from './rare-bank.js';
 // Original starter bank. Immutable releases preserve daily puzzles and saved games.
 // Rarity is an editorial familiarity rating, NOT observed player frequency.
 const a = (name, tier, aliases = []) => ({ name, tier, aliases });
@@ -94,3 +95,7 @@ export const bank = {
     ]}
   ]
 };
+
+const themeFor={greek:"culture","south-america":"world","one-letter":"science",zodiac:"culture",chess:"culture",planets:"science","si-base":"science",noble:"science",polygons:"science",dwarfs:"science","great-lakes":"world",rainbow:"science"};
+for(const t of bank.rare){t.finite=true;t.theme=themeFor[t.id]||"mixed";t.level=["si-base","one-letter","noble","greek","polygons"].includes(t.id)?"hard":"easy";t.hint="A familiar starting point: "+t.answers[0].name;}
+bank.rare=[...expandedRare,...bank.rare];

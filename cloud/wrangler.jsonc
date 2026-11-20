@@ -1,0 +1,9 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "offbeat-ai",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-19",
+  "ai": { "binding": "AI" },
+  "kv_namespaces": [{ "binding": "PUZZLES", "id": "64296403f49b48b6b1591a6d5433118e" }],
+  "observability": { "enabled": false }
+}

@@ -21,17 +21,6 @@ test('duplicate letters use exact matches first and never overcount',()=>{
   assert.deepEqual(gradeWord('EERIE','SHEEP'),['present','present','absent','absent','absent']);
   assert.deepEqual(gradeWord('GEESE','SHEEP'),['absent','present','correct','present','absent']);
 });
-test('rare answers normalize aliases, reject unknown without a turn and stop at five',()=>{
-  let s=session('rare');const topics=view(bank,s).p;
-  assert.throws(()=>play(bank,s,{answer:'Not an answer'}),/No turn lost/);assert.equal(s.actions.length,0);
-  assert.equal(normalize('  Súl-phur!  '),'sulphur');
-  let score=0;
-  for(const t of topics){const a=t.answers.at(-1);s=play(bank,s,{answer:(a.aliases[0]||a.name).toUpperCase()});score+=[0,10,25,50,100][a.tier];}
-  assert.equal(view(bank,s).score,score);assert.equal(view(bank,s).done,true);
-  assert.throws(()=>play(bank,s,{skip:true}),/complete/);
-  assert.equal(restore(bank,{...s,score:999999,won:true}).actions.length,5);
-  assert.equal(view(bank,restore(bank,{...s,score:999999})).score,score);
-});
 test('word dictionary, duplicate guess, win lock and six-guess loss',()=>{
   let s=session('word');const answer=view(bank,s).p;
   assert.throws(()=>play(bank,s,{word:'ZZZZZ'}),/dictionary/);
@@ -64,6 +53,6 @@ test('saved-state replay rejects tampering, malformed input and post-win moves',
   for(const raw of [null,{}, {...s,version:'old'}, {...s,actions:[{word:'ZZZZZ'}]}, {...s,key:'../../etc'}, {...won,actions:[...won.actions,{word:'APPLE'}]}, {...s,actions:Array(1000).fill({})}])assert.equal(restore(bank,raw),null);
 });
 test('bank checker rejects ambiguous aliases and repeated tiles',()=>{
-  const b=structuredClone(bank);b.rare[0].answers[1].aliases.push('Alpha');b.groups[0].groups[1].words[0]=b.groups[0].groups[0].words[0];
+  const b=structuredClone(bank);b.rare[0].answers[1].aliases.push(b.rare[0].answers[0].name);b.groups[0].groups[1].words[0]=b.groups[0].groups[0].words[0];
   const e=validateBank(b);assert.ok(e.some(x=>x.includes('alias')));assert.ok(e.some(x=>x.includes('unique tiles')));
 });
