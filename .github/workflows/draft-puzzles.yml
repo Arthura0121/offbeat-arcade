@@ -1,0 +1,26 @@
+name: Draft puzzles (optional AI)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: draft-puzzles
+  cancel-in-progress: false
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm run generate
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_AI_TOKEN: ${{ secrets.CF_AI_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unreviewed-puzzles
+          path: work/candidates/candidate.json
+          retention-days: 3

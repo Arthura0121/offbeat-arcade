@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10131e">
+  <meta name="description" content="A little offbeat. A lot of brainpower. Play three original puzzles, every day or all day. Free, no account needed.">
+  <title>Offbeat — Puzzles for curious minds</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./src/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to games</a>
+  <header class="site-header"><div class="header-inner">
+    <a href="#" class="brand" aria-label="Offbeat home"><span class="brand-mark" aria-hidden="true">✳</span>offbeat<span class="brand-period">.</span></a>
+    <nav aria-label="Main"><a href="#" class="nav-games">The arcade</a><button class="text-button" data-action="stats">Your stats</button><button class="help-button" data-action="help" aria-label="How to play">?</button></nav>
+  </div></header>
+  <main id="main" tabindex="-1"></main>
+  <footer><span>Made for curious minds.</span><div><button data-action="about" class="text-button">About & privacy</button><span class="footer-free">Always a free next round.</span></div></footer>
+  <dialog id="modal" aria-labelledby="modal-title"><div class="modal-top"><h2 id="modal-title"></h2><button data-action="close" class="icon-button" aria-label="Close dialog">×</button></div><div id="modal-content"></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <noscript><p class="noscript">Offbeat needs JavaScript to run its puzzles. Enable it in your browser and refresh.</p></noscript>
+</body>
+</html>
