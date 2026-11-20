@@ -1,3 +1,4 @@
+import {createDiveScene} from './dive-scene.js';
 import {diveScreen} from './dive-ui.js';
 import {resolveAnswer,validDeck} from './rare-engine.js';
 import {AI_ENDPOINT} from './config.js';
@@ -6,13 +7,13 @@ import {GAMES,TITLES,TIERS,utcDay,shuffle,createSession,view,play,restore} from 
 const main=document.querySelector('main'), modal=document.querySelector('#modal');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let mode='daily',game=null,session=null,selected=[],draft='',message='',feedback=null,timer,volatile=false;
-let diveStarted=false,diveReveal=null,diveSuggestion=null,aiReady=null,aiBusy=false,aiMessage='',remaining=30000,lastTick=0,diveClock=null,requestController=null,soundEnabled=false,audioContext=null,motion='';
+let diveStarted=false,diveReveal=null,diveSuggestion=null,aiReady=null,aiBusy=false,aiMessage='',remaining=30000,lastTick=0,diveClock=null,requestController=null,motion='';
 const memory=new Map();
 function read(key,fallback){if(memory.has(key))return memory.get(key);try{return JSON.parse(localStorage.getItem('offbeat:'+key))??fallback;}catch{volatile=true;return memory.get(key)??fallback;}}
 function write(key,value){memory.set(key,value);try{localStorage.setItem('offbeat:'+key,JSON.stringify(value));}catch{volatile=true;}}
 let salt=read('salt',null);if(!/^[a-f0-9]{8}$/.test(salt)){salt=crypto.getRandomValues(new Uint32Array(1))[0].toString(16).padStart(8,'0');write('salt',salt);}
 let divePace=read('dive-pace','classic'),diveLevel=read('dive-level','easy'),diveTheme=read('dive-theme','mixed'),diveSource='curated';
-soundEnabled=read('sound',false)===true;
+let diveScene=null,sceneCanvas=null,launchUntil=0;
 const slot=(g,m)=>`${bank.version}:${g}:${m}:${m==='daily'?utcDay():'current'}`;
 function saved(g,m){const s=restore(bank,read(slot(g,m),null));return s&&s.game===g&&s.mode===m&&(m!=='daily'||s.key===utcDay())?s:null;}
 function fresh(g,m){let key=utcDay();if(m==='unlimited'){let count=read('counter:'+g,-1);count=Number.isInteger(count)&&count>=-1&&count<999999998?count+1:0;write('counter:'+g,count);key=`u:${salt}:${count}`;}return createSession(bank,g,m,key,g==='rare'?{pace:divePace,level:diveLevel,theme:diveTheme}:{});}
@@ -24,21 +25,21 @@ const groupArt=`<div class="mini-groups" aria-hidden="true">${Array.from({length
 function selector(){return `<div class="mode-switch" role="group" aria-label="Play mode"><button data-mode="daily" aria-pressed="${mode==='daily'}">Daily</button><button data-mode="unlimited" aria-pressed="${mode==='unlimited'}">Unlimited <span aria-hidden="true">∞</span></button></div>`;}
 function status(g){const s=saved(g,mode);if(!s)return '';return `<span class="progress-badge">${view(bank,s).done?'Completed':'In progress'}</span>`;}
 function home(){
-  stopDive();document.body.classList.remove('in-dive');
+  stopDive();diveScene?.dispose();diveScene=null;sceneCanvas=null;document.body.classList.remove('in-dive');
   game=null;session=null;feedback=null;draft='';document.title='Offbeat — Puzzles for curious minds';
   const date=new Date(utcDay()+'T12:00:00Z').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',timeZone:'UTC'});
-  main.innerHTML=`<section class="intro"><div class="eyebrow"><span class="tiny-spark">✳</span> A DAILY DOSE OF DIFFERENT</div><h1>Give your brain<br>a little <span>plot twist.</span></h1><p>Three little games. Plenty of aha moments.<br>Play every day. Or make a day of it.</p><div class="intro-stamp" aria-hidden="true"><span>STAY</span><b>curious</b><span>✳ &nbsp; PLAY OFTEN &nbsp; ✳</span></div></section>
-  <section class="arcade" aria-labelledby="arcade-title"><div class="collection-bar"><div><h2 id="arcade-title">Pick your brain teaser</h2><p>${mode==='daily'?esc(date)+' <span class="utc">· UTC edition</span>':'No countdown. No paywall. Just one more round.'}</p></div>${selector()}</div>
+  main.innerHTML=`<section class="intro"><div class="eyebrow"><span class="tiny-spark">✳</span> A DAILY DOSE OF DIFFERENT</div><h1>PLAY SOMETHING<br><span>LESS ORDINARY.</span></h1><p>An independent puzzle arcade.<br>Open daily. Stay for another round.</p><div class="intro-stamp" aria-hidden="true"><span>STAY</span><b>curious</b><span>✳ &nbsp; PLAY OFTEN &nbsp; ✳</span></div></section>
+  <section class="arcade" aria-labelledby="arcade-title"><div class="collection-bar"><div><h2 id="arcade-title">THE PLAYLIST / 01—03</h2><p>${mode==='daily'?esc(date)+' <span class="utc">· UTC edition</span>':'No countdown. No paywall. Just one more round.'}</p></div>${selector()}</div>
   <article class="featured game-card"><div class="featured-copy"><div class="card-kicker"><span class="pill">THE RARE-ANSWER CHALLENGE</span>${status('rare')}</div><h3>Rarebird<span class="title-star" aria-hidden="true">✳</span></h3><p>Obvious answers? Think again.<br>Find the hidden gems in what you know.</p><div class="card-meta"><span>7 prompts · 30 seconds</span><span>2–4 min</span><span>A little unexpected</span></div><button class="button lavender" data-game="rare">${saved('rare',mode)?view(bank,saved('rare',mode)).done?'View your results':'Keep playing':'Play Rarebird'}</button></div><div class="bird-art">${bird}<span class="art-label">THE LESS OBVIOUS, THE BETTER.</span></div></article>
   <div class="secondary-games"><article class="game-card word-card"><div class="small-card-top"><span class="game-symbol word-symbol" aria-hidden="true">Aa</span><span class="pill">WORD PLAY</span>${status('word')}</div><h3>Fivefold</h3><p>Five letters. Six guesses.<br>One very satisfying revelation.</p>${wordArt}<div class="card-bottom"><span>2–5 min · Letter detective</span><button class="button mint" data-game="word">${saved('word',mode)?view(bank,saved('word',mode)).done?'View results':'Continue':'Play Fivefold'}</button></div></article>
   <article class="game-card groups-card"><div class="small-card-top"><span class="game-symbol group-symbol" aria-hidden="true">⊞</span><span class="pill">MAKE CONNECTIONS</span>${status('groups')}</div><h3>Common Ground</h3><p>Sixteen words. Four secret groups.<br>See what brings them together.</p>${groupArt}<div class="card-bottom"><span>3–6 min · Pattern spotter</span><button class="button peach" data-game="groups">${saved('groups',mode)?view(bank,saved('groups',mode)).done?'View results':'Continue':'Play Common Ground'}</button></div></article></div>
-  </section><section class="promise"><span class="promise-star" aria-hidden="true">✳</span><div><h2>Less scrolling. More lightbulbs.</h2><p>Free to play. No account. No last round.</p></div><span class="promise-note">A small break for a big imagination.</span></section>`;
+  </section><section class="promise"><span class="promise-star" aria-hidden="true">✳</span><div><h2>NO TICKETS REQUIRED.</h2><p>Free to play. No account. No last round.</p></div><span class="promise-note">A small break for a big imagination.</span></section>`;
 }
 function start(g,newRound=false){stopDive();game=g;session=!newRound&&saved(g,mode)||fresh(g,mode);selected=[];draft='';message='';feedback=null;motion='';if(g==='rare'){divePace=session.pace;diveLevel=session.level;diveTheme=session.theme;diveStarted=session.actions.length>0;diveReveal=null;diveSuggestion=null;remaining=30000;aiMessage='';checkAIConnection();}keep();renderGame();if(g==='rare'&&diveStarted&&!view(bank,session).done)startClock();}
 function heading(v){return `<div class="game-toolbar"><button class="text-button back" data-action="home">All games</button>${selector()}<button class="text-button" data-action="help">How to play</button></div><div class="play-heading"><span class="eyebrow">${mode==='daily'?'THE DAILY EDITION · '+session.key:'UNLIMITED · TAKE YOUR TIME'}</span><h1>${TITLES[game]}</h1><p>${game==='rare'?'An uncommon answer is a beautiful thing.':game==='word'?'Follow the colors. Find the word.':'Find four groups of four related words.'}</p></div>${volatile?'<p class="storage-warning">Browser storage is unavailable. Progress will last only for this visit.</p>':''}`;}
 function renderGame(focus=false){
   const v=view(bank,session);document.title=TITLES[game]+' — Offbeat';
-  document.body.classList.toggle('in-dive',game==='rare');main.innerHTML=game==='rare'?rare(v):`<section class="play-shell ${game}-shell ${motion}">${heading(v)}${game==='word'?word(v):groups(v)}</section>`;if(game==='rare'){const soundButton=document.querySelector('.dive-sound');soundButton.textContent=soundEnabled?'Sound on':'Sound off';soundButton.setAttribute('aria-pressed',String(soundEnabled));}
+  document.body.classList.toggle('in-dive',game==='rare');main.innerHTML=game==='rare'?rare(v):`<section class="play-shell ${game}-shell ${motion}">${heading(v)}${game==='word'?word(v):groups(v)}</section>`;if(game==='rare'){const slot=document.querySelector('.scene-mount');if(!sceneCanvas){sceneCanvas=document.createElement('canvas');sceneCanvas.setAttribute('aria-hidden','true');diveScene=createDiveScene(sceneCanvas);}slot.append(sceneCanvas);diveScene.update(v,diveStarted,!!diveReveal?.answer);if(launchUntil>performance.now()){document.querySelector('.dive-screen').classList.add('launching');const count=document.createElement('div');count.className='launch-count';count.innerHTML='LEAVING THE SURFACE<b id=launch-seconds>3</b>';document.querySelector('.dive-screen').append(count);}}
   if(v.done)keep();if(focus)document.querySelector('#answer')?.focus({preventScroll:true});
 }
 function result(v){
@@ -46,9 +47,8 @@ function result(v){
   return `<div class="result-panel"><span class="eyebrow">${mode==='daily'?'DAILY COMPLETE':'ROUND COMPLETE'}</span><h2>${title}</h2><p>${game==='rare'?`<strong>${v.score}</strong> / 700 points`:game==='word'?v.won?`Solved in <strong>${v.rows.length}</strong> of 6 guesses.`:`The word was <strong>${v.p}</strong>.`:`<strong>${v.solved.length}</strong> of 4 groups found · ${v.misses.length} mistake${v.misses.length===1?'':'s'}.`}</p><div class="result-actions"><button class="button ${game==='rare'?'lavender':game==='word'?'mint':'peach'}" data-action="next">${mode==='daily'?'Play unlimited':'Play another'}</button><button class="button outline" data-action="share">Share result</button></div>${mode==='daily'?'<p class="muted">A fresh daily arrives at 00:00 UTC. Unlimited is always open.</p>':''}</div>`;
 }
 function rare(v){return diveScreen({s:session,v,started:diveStarted,reveal:diveReveal,aiReady,aiBusy,aiMessage,suggestion:diveSuggestion,message,pace:divePace,level:diveLevel,theme:diveTheme,source:diveSource,remaining,selector:selector(),tiers:TIERS});}
-function stopDive(){clearInterval(diveClock);diveClock=null;requestController?.abort();requestController=null;aiBusy=false;diveReveal=null;}
-function startClock(){clearInterval(diveClock);lastTick=performance.now();diveClock=setInterval(()=>{const now=performance.now(),elapsed=now-lastTick;lastTick=now;if(game!=='rare'||!session||!diveStarted||diveReveal||aiBusy||modal.open||document.hidden||session.pace==='relaxed'||view(bank,session).done)return;remaining=Math.max(0,remaining-elapsed);const counter=document.querySelector('#seconds-left'),fill=document.querySelector('#timer-fill');if(counter)counter.textContent=Math.ceil(remaining/1000);if(fill)fill.style.width=remaining/300+'%';document.querySelector('.round-timer')?.classList.toggle('urgent',remaining<=10000);if(remaining===0)submit({type:'timeout'});},100);}
-function chime(tier=1){if(!soundEnabled)return;try{audioContext??=new AudioContext();audioContext.resume();[0,1,2].slice(0,tier>2?3:2).forEach((i)=>{const o=audioContext.createOscillator(),g=audioContext.createGain(),t=audioContext.currentTime+i*.09;o.type='sine';o.frequency.value=[392,523.25,783.99][i];g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.055,t+.015);g.gain.exponentialRampToValueAtTime(.001,t+.28);o.connect(g).connect(audioContext.destination);o.start(t);o.stop(t+.3);});}catch{}}
+function stopDive(){launchUntil=0;clearInterval(diveClock);diveClock=null;requestController?.abort();requestController=null;aiBusy=false;diveReveal=null;}
+function startClock(){clearInterval(diveClock);lastTick=performance.now();diveClock=setInterval(()=>{const now=performance.now(),elapsed=now-lastTick;lastTick=now;if(launchUntil>now){const n=document.querySelector('#launch-seconds');if(n)n.textContent=Math.ceil((launchUntil-now)/1000);return;}if(document.querySelector('.launch-count')){document.querySelector('.launch-count').remove();document.querySelector('.dive-screen')?.classList.remove('launching');document.querySelector('#answer')?.focus({preventScroll:true});}if(game!=='rare'||!session||!diveStarted||diveReveal||aiBusy||modal.open||document.hidden||session.pace==='relaxed'||view(bank,session).done)return;remaining=Math.max(0,remaining-elapsed);const counter=document.querySelector('#seconds-left'),fill=document.querySelector('#timer-fill');if(counter)counter.textContent=Math.ceil(remaining/1000);if(fill)fill.style.width=remaining/300+'%';document.querySelector('.round-timer')?.classList.toggle('urgent',remaining<=10000);if(remaining===0)submit({type:'timeout'});},100);}
 async function checkAIConnection(){try{const r=await fetch(AI_ENDPOINT+'/status',{signal:AbortSignal.timeout(6000)});const data=await r.json();aiReady=r.ok&&data.ready===true;}catch{aiReady=false;}if(game==='rare'&&!diveStarted&&!aiBusy)renderGame();}
 async function aiCall(path,body){requestController?.abort();const controller=new AbortController();requestController=controller;const timeout=setTimeout(()=>controller.abort(),80000);try{const res=await fetch(AI_ENDPOINT+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal});const data=await res.json();if(!res.ok)throw new Error(data.message||'The AI lookout is unavailable. Curated play is ready.');return data;}finally{clearTimeout(timeout);if(requestController===controller)requestController=null;}}
 async function beginDive(){
@@ -59,7 +59,7 @@ async function beginDive(){
   try{const count=read('ai-count',0);const result=await aiCall('/round',{theme:diveTheme,level:diveLevel,slot:Number.isInteger(count)?count%4:0});if(game!=='rare'||session?.key!==key)return;if(result.kind!=='ai-expedition'||result.format!==2||!validDeck(result.topics)||typeof result.roundId!=='string')throw new Error('The AI draft did not pass the puzzle checks. Try a curated expedition.');write('ai-count',(Number.isInteger(count)?count:0)+1);session=createSession(bank,'rare',mode,key,{pace:divePace,level:diveLevel,theme:diveTheme,deck:result.topics,roundId:result.roundId});aiMessage='AI-composed from vetted topics and checked constraints. Extra answer checks remain provisional.';aiReady=true;
   }catch(e){if(game!=='rare'||session?.key!==key)return;aiMessage=e.message;aiBusy=false;renderGame();return;}aiBusy=false;
  }
- diveStarted=true;diveReveal=null;diveSuggestion=null;remaining=30000;message='';keep();renderGame(true);startClock();
+ launchUntil=performance.now()+2400;diveStarted=true;diveReveal=null;diveSuggestion=null;remaining=30000;message='';keep();renderGame(true);window.scrollTo({top:0,behavior:'instant'});startClock();
 }
 async function checkWithAI(){
  if(aiBusy||game!=='rare'||!diveStarted||diveReveal)return;
@@ -81,13 +81,14 @@ function groups(v){
 }
 let shuffleCount=0;
 function submit(action){
+  if(game==='rare'&&launchUntil>performance.now())return;
   if(mode==='daily'&&session.key!==utcDay()){toast('A new UTC day has started. Here is today’s puzzle.');start(game);return;}
   try{
     const old=view(bank,session);session=play(bank,session,action);const next=view(bank,session);
-    if(game==='rare'){if(action.type==='hint'){message='';keep();renderGame(true);return;}diveReveal=next.rounds.at(-1);diveSuggestion=null;message='';if(diveReveal.answer)chime(diveReveal.answer.tier);}
-    if(game==='word'){motion='word-reveal';chime(next.won?4:1);draft='';message=next.done?'':'Keep following the clues.';}
-    if(game==='groups'){if(next.solved.length>old.solved.length){motion='group-win';chime(3);selected=[];message='Connection found. Nicely done.';}else{motion='group-miss';const near=old.p.groups.some((g,i)=>!old.solved.includes(i)&&selected.filter(w=>g.words.includes(w)).length===3);message=near?'One away. Rethink one of your words.':'Not quite a group. Try a different connection.';}}
-    keep();renderGame(game==='rare');
+    if(game==='rare'){if(action.type==='hint'){message='';keep();renderGame(true);return;}diveReveal=next.rounds.at(-1);diveSuggestion=null;message='';}
+    if(game==='word'){motion='word-reveal';draft='';message=next.done?'':'Keep following the clues.';}
+    if(game==='groups'){if(next.solved.length>old.solved.length){motion='group-win';selected=[];message='Connection found. Nicely done.';}else{motion='group-miss';const near=old.p.groups.some((g,i)=>!old.solved.includes(i)&&selected.filter(w=>g.words.includes(w)).length===3);message=near?'One away. Rethink one of your words.':'Not quite a group. Try a different connection.';}}
+    keep();renderGame(game==='rare');if(game==='rare')window.scrollTo({top:0,behavior:'instant'});
   }catch(e){message=e.message;if(game==='rare'){const raw=action.answer;const match=resolveAnswer(vTopic(),raw);diveSuggestion=match.status==='suggestion'?match.answer:null;renderGame(true);const inputNode=document.querySelector('#answer');if(inputNode)inputNode.value=raw||'';if(match.status==='unknown'&&aiReady===true&&action.type==='answer'&&!action.review&&!aiBusy)checkWithAI();return;}const node=document.querySelector('#game-message');if(node)node.textContent=message;else toast(message);}
 }
 function vTopic(){return view(bank,session).topic;}
@@ -119,10 +120,9 @@ document.addEventListener('click',e=>{
     case 'home':home();break;case 'help':help();break;case 'stats':stats();break;case 'about':about();break;case 'close':modal.close();break;
     case 'skip':submit({type:'pass'});break;
     case 'begin-dive':beginDive();break;
-    case 'continue-dive':diveReveal=null;remaining=30000;message='';renderGame(true);startClock();break;
+    case 'continue-dive':diveReveal=null;remaining=30000;message='';renderGame(true);window.scrollTo({top:0,behavior:'instant'});startClock();break;
     case 'hint':submit({type:'hint'});break;
     case 'ai-check':checkWithAI();break;
-    case 'sound':soundEnabled=!soundEnabled;write('sound',soundEnabled);b.textContent=soundEnabled?'Sound on':'Sound off';b.setAttribute('aria-pressed',String(soundEnabled));if(soundEnabled)chime(2);break;
     case 'next':mode='unlimited';start(game,true);break;
     case 'share':share();break;
     case 'shuffle':shuffleCount++;motion='shuffle';renderGame();break;
