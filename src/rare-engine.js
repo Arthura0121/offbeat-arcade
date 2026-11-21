@@ -13,7 +13,7 @@ export function resolveAnswer(topic,input){
 }
 const text=(s,max=200)=>typeof s==='string'&&s.trim().length>0&&s.length<=max;
 export function validTopic(t){
- if(!t||!text(t.id,100)||!text(t.title)||!text(t.prompt)||!text(t.scope,400)||!Array.isArray(t.answers)||t.answers.length<3||t.answers.length>100)return false;
+ if(!t||!text(t.id,100)||!text(t.title)||!text(t.prompt)||!text(t.scope,400)||!Array.isArray(t.answers)||t.answers.length<3||t.answers.length>500)return false;
  const seen=new Set();
  for(const a of t.answers){if(!a||!text(a.name,100)||!Number.isInteger(a.tier)||!RARE_TIERS[a.tier]||!Array.isArray(a.aliases)||a.aliases.length>12||!a.aliases.every(x=>text(x,100)))return false;for(const x of [a.name,...a.aliases]){const n=cleanAnswer(x);if(!n||seen.has(n))return false;seen.add(n);}}
  return true;

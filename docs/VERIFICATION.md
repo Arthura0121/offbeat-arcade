@@ -28,3 +28,6 @@ These checks establish personal game behavior and successful live inference. The
 The Cloudflare dashboard confirmed **Free — Current plan**. No paid upgrade was selected.
 
 Connections variety update: 32 tests pass, including every new puzzle solving, no-repeat practice bags, deterministic category order, all four positions used for source-final categories, and replay of legacy saved rounds. Nineteen of the 24 puzzles have no fill-in-the-blank category.
+
+
+Pixel-ocean update: 45 tests pass, including all 193 UN members, reference-check failures, seven-day semantic review caching, AI-deck expiry and constrained local-answer enrichment. Licensed independent OpenKrillion renderer/art and bundled VT323 font replace the earlier procedural diving bell. Listed answers resolve synchronously; new live AI reviews remain optional and can take seconds. No audio code was imported.
