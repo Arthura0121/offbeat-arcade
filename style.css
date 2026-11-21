@@ -42,4 +42,4 @@ body.in-dive{background:#071e32;color:#e8eedc}.in-dive .site-header,.in-dive foo
 .play-shell{padding:0 28px 36px}.word-input input{min-width:0;background:#fffdf5;color:#182a30;border:1px solid #8a9c90;border-radius:0}.word-input input::placeholder{color:#53625f}.play-shell .game-message{color:#7a3c28}.secondary-games p,.groups-card p,.card-bottom>span,.fair-note,.word-legend,.mistakes{color:#53625f}.secondary-games .progress-badge{color:#285e48}
 @media(max-width:600px){.play-shell{padding:0 14px 28px}}
 .word-grid{width:min(100%,313px)}.word-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}.word-row .letter{width:100%;height:auto;aspect-ratio:1}.group-controls{flex-wrap:wrap}
-@media(max-width:359px){.tile{padding-inline:3px;font-size:11px;letter-spacing:-.2px}}
+@media(max-width:359px){.tile{padding-inline:2px;font-size:11px;letter-spacing:-.3px}}
