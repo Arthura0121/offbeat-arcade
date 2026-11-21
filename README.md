@@ -6,16 +6,16 @@ Three original browser puzzles, free daily and unlimited play, no player account
 
 ## Rarebird: The Midnight Dive
 
-An animated ocean expedition with an original pixel bird, bubbles, drifting sea life, a depth meter, rarity reveals and optional synthesized sound. Seven prompts per dive; every point explores another ten metres.
+A pixel-ocean expedition with an original bird pilot, moving depth zones, staged plunges, tier-specific effects and a dive recap. The independently implemented OpenKrillion renderer and selected artwork are reused under MIT; see [credits and provenance](docs/OPENKRILLION-REUSE.md). No audio is included. Seven prompts per dive; every point explores another ten metres.
 
 - Classic: 30 seconds per round, three lives. Only a timeout costs a life. Pass for zero points without losing a life.
 - Relaxed: no timer. Unlimited includes difficulty choices and nature, world, culture and science themes.
 - Hints show a familiar accepted answer and cap that round at 25 points.
 - Exact names and listed aliases work immediately. A unique one-character spelling match is offered for confirmation, never silently substituted.
-- Unlisted answers are automatically sent for a cloud AI reference check when the service is connected. A manual **Check with AI** button can retry. The timer pauses while checking; uncertainty or service failure never marks an answer wrong or costs a life.
-- **AI remix** in Unlimited asks AI to compose seven rounds from vetted topics and compatible letter/word constraints. Prompts and accepted examples are then constructed and checked by the server. Extra AI-checked answers remain provisional; AI can still make judgment errors.
+- Unlisted answers offer an optional, cancellable **AI review**. Accepted reviews are cached locally for seven days, matched to the full question semantics, for immediate reuse. The timer pauses while checking; uncertainty or service failure never marks an answer wrong or costs a life.
+- **AI expedition** in Unlimited prepares ahead of play and saves four variations per theme/difficulty for quick reuse. It asks AI to compose seven rounds from vetted topics and compatible letter/word constraints. Prompts and accepted examples are then constructed and checked by the server. Extra AI-checked answers remain provisional; AI can still make judgment errors.
 
-The local starter bank now has **40 topics**, including broad everyday prompts with 815 accepted answers and 150 additional aliases. Its familiarity tiers remain estimates, not measured player popularity. Daily Rarebird balances four easy, two mixed and one hard prompt. The new `dive-2` rules begin a fresh Rarebird edition; existing Fivefold and Common Ground daily choices and progress remain compatible.
+The local starter bank now has **40 topics**, including broad everyday prompts with 973 accepted answers and 187 additional aliases, including all 193 UN members. Its familiarity tiers remain estimates, not measured player popularity. Daily Rarebird balances four easy, two mixed and one hard prompt. The new `dive-2` rules begin a fresh Rarebird edition; existing Fivefold and Common Ground daily choices and progress remain compatible.
 
 ## Fivefold and Common Ground
 
@@ -55,4 +55,4 @@ Scores and lives are recomputed from validated moves. Hint caps, timeouts, alias
 
 Curated banks eventually repeat. Human review remains necessary for adding new trusted daily puzzles. Keep original release data in version control and change editions deliberately. Do not copy another publisher's branding, art, interface assets or puzzle sets.
 
-Code, original artwork and original puzzle sets are provided under the MIT license. Independent project; no affiliation with other puzzle publishers.
+Offbeat code and original puzzle sets are provided under MIT. Selected OpenKrillion rendering code/art retains its MIT notice; the locally hosted VT323 font retains its SIL OFL notice. Independent project; no affiliation with other puzzle publishers.

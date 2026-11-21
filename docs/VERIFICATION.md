@@ -8,7 +8,7 @@ All **31 tests** pass, covering the three games, deterministic UTC dailies, reta
 
 Additional backend tests enumerate all constructed remix options and check that every accepted example satisfies its letter/word constraint. Invented plan IDs cannot become decks. Generated UN-membership rounds are tested for the same direct-reference retrieval as the base topic. A confident model verdict with an invented quote is rejected; a direct supporting reference can produce a provisional acceptance.
 
-`npm run build`, starter-bank validation and standalone-script syntax checks pass. The bank contains 40 Rarebird topics, 815 accepted answers and 150 additional aliases, plus the existing 1,235 word guesses and 24 grouping puzzles for new rounds (the original 12 are retained for saved-game replay).
+`npm run build`, starter-bank validation and standalone-script syntax checks pass. The bank contains 40 Rarebird topics, 973 accepted answers and 187 additional aliases, plus the existing 1,235 word guesses and 24 grouping puzzles for new rounds (the original 12 are retained for saved-game replay).
 
 ## Browser checks
 
@@ -17,7 +17,7 @@ Additional backend tests enumerate all constructed remix options and check that 
 - Confirmed Fivefold applies its staggered `flip-letter` animation to all five newly revealed tiles.
 - Confirmed Common Ground's one-away feedback, selected-tile behavior and solved-group `celebrate-group` animation.
 - Checked the dive at a 390-pixel viewport: page width was 390, with no horizontal overflow.
-- The stylesheet disables decorative animations and transitions under `prefers-reduced-motion`; sound is off by default.
+- The stylesheet disables decorative animations and transitions under `prefers-reduced-motion`; there is no audio playback.
 
 ## Real cloud tests
 
