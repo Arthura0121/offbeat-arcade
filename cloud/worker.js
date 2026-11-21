@@ -66,7 +66,7 @@ export function composeTopic(option,id){
 }
 async function generateRound(env,body){
  const theme=['mixed','nature','world','culture','science'].includes(body.theme)?body.theme:'mixed';const level=['easy','mixed','hard'].includes(body.level)?body.level:'mixed';const slot=Number.isInteger(body.slot)&&body.slot>=0&&body.slot<4?body.slot:0;
- const key=`deck:v2:${day()}:${theme}:${level}:${slot}`;const cached=await env.PUZZLES.get(key,'json');if(cached)return reply({...cached,cached:true});
+ const key=`deck:v3:${day()}:${theme}:${level}:${slot}`;const cached=await env.PUZZLES.get(key,'json');if(cached)return reply({...cached,cached:true});
  return once(key,async()=>{
  const options=remixOptions(theme,level);const bases=options.filter(o=>!o.constraint);const varied=bases.flatMap(b=>{const list=options.filter(o=>o.topic.id===b.topic.id&&o.constraint);return [list[slot%Math.max(1,list.length)],list[(slot+2)%Math.max(1,list.length)]].filter(Boolean);});const unique=[...new Map([...bases,...varied].map(o=>[o.id,o])).values()];let rotated=[...unique.slice(slot*3),...unique.slice(0,slot*3)];
  if(level==='hard'){const harder=rotated.filter(o=>o.constraint);if(harder.length>=7)rotated=harder;}

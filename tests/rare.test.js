@@ -12,3 +12,15 @@ test('only three timeouts end classic dive early, passes cost no life',()=>{let 
 test('review receipts must match topic/input, include source, and bound the tier',()=>{let s=make();const t=view(bank,s).topic;assert.equal(resolveAnswer(t,unlistedCountry).status,'unknown');const r={kind:'ai-answer',decision:'accepted',topicId:t.id,input:'republicofalbania',canonical:'Albania',tier:2,explanation:'Albania is a UN member state.',source:'https://en.wikipedia.org/wiki/Albania'};assert.equal(validReview(r,t,unlistedCountry),true);for(const bad of [{...r,tier:999},{...r,topicId:'different'},{...r,input:'wrong'},{...r,source:'javascript:alert(1)'},{...r,decision:'uncertain'}])assert.equal(validReview(bad,t,unlistedCountry),false);s=play(bank,s,{type:'answer',answer:unlistedCountry,review:r});assert.equal(view(bank,s).rounds[0].basis,'ai');assert.equal(view(bank,s).score,25);assert.ok(restore(bank,s));});
 test('invalid AI decks, malformed saved moves and old rare rules are rejected',()=>{const s=make();assert.equal(restore(bank,{...s,rules:undefined}),null);assert.equal(restore(bank,{...s,actions:[{type:'answer',answer:unlistedCountry,review:{tier:999}}]}),null);assert.equal(validDeck(Array(7).fill(view(bank,s).topic)),false);assert.throws(()=>createSession(bank,'rare','daily','2026-11-20',{deck:Array(7).fill(view(bank,s).topic)}));});
 test('practice nature deck honors the theme and persists its settings',()=>{const s=createSession(bank,'rare','unlimited','u:11111111:7',{pace:'relaxed',theme:'nature',level:'easy'});assert.ok(view(bank,s).p.every(t=>t.theme==='nature'));assert.equal(restore(bank,s).pace,'relaxed');});
+
+test('saved AI ratings and provenance survive later additions to the prepared bank',()=>{
+ const previous=structuredClone(bank),previousNations=previous.rare.find(t=>t.id==='nations');
+ previousNations.answers=previousNations.answers.filter(a=>a.name!=='Albania');
+ let s=createSession(previous,'rare','daily','2026-11-20');const topic=view(previous,s).topic;
+ assert.equal(topic.id,'nations');assert.equal(resolveAnswer(topic,'Albania').status,'unknown');
+ const review={kind:'ai-answer',decision:'accepted',topicId:topic.id,input:'albania',canonical:'Albania',tier:2,explanation:'Albania is a UN member state.',source:'https://en.wikipedia.org/wiki/Albania'};
+ s=play(previous,s,{type:'answer',answer:'Albania',review});assert.equal(view(previous,s).score,25);
+ const restored=restore(bank,s);assert.ok(restored);const after=view(bank,restored);
+ assert.equal(after.score,25);assert.equal(after.depth,250);assert.equal(after.rounds[0].basis,'ai');assert.deepEqual(after.rounds[0].review,review);assert.deepEqual(restored.actions[0].review,review);
+ const fresh=play(bank,make(),{type:'answer',answer:'Albania'});assert.equal(view(bank,fresh).score,50);assert.equal(view(bank,fresh).rounds[0].basis,'bank');
+});

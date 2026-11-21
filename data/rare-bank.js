@@ -215,8 +215,8 @@ export const expandedRare=[
  ['Paris',1],['London',1],['Tokyo',1],['Rome',1],['Berlin',1],['Madrid',1],['Beijing',1],['Ottawa',2],['Canberra',2],['New Delhi',2],['Nairobi',3],['Accra',3],['Lima',2],['Kathmandu',3],['Thimphu',4],['Dili',4],['Funafuti',4],['Ngerulmud',4],['Maseru',4],['Vaduz',4],['Paramaribo',4],['Asmara',4],['Bishkek',4],['Dushanbe',4],['Tirana',3],['Yerevan',3],['Tbilisi',3],['Ulaanbaatar',4,'Ulan Bator']]),
  topic('rivers','Go with the flow','Name a river.','world','easy','River',[
  ['Nile',1],['Amazon',1],['Mississippi',1],['Thames',1],['Seine',2],['Danube',2],['Rhine',2],['Ganges',2],['Yangtze',2],['Mekong',3],['Orinoco',3],['Zambezi',3],['Limpopo',4],['Okavango',4],['Lena',4],['Yenisei',4],['Irrawaddy',4,'Ayeyarwady'],['Tagus',4],['Douro',4],['Vistula',4],['Tigris',3],['Euphrates',3],['Indus',3],['Brahmaputra',4],['Volga',3]]),
- topic('islands','A world apart','Name an island.','world','mixed','Island',[
- ['Greenland',1],['Madagascar',1],['Iceland',1],['Cuba',1],['Sicily',2],['Sardinia',3],['Borneo',3],['Sumatra',3],['Java',2],['Tasmania',3],['Honshu',3],['Hokkaido',3],['Svalbard',4],['Socotra',4],['Zanzibar',3],['Skye',3,'Isle of Skye'],['Baffin Island',4],['Ellesmere Island',4],['Sulawesi',4],['Luzon',3],['Mindanao',4],['Corsica',3],['Crete',2],['Cyprus',2],['Jeju',4]]),
+ topic('islands','A world apart','Name an island or archipelago.','world','mixed','Island',[
+ ['Greenland',1],['Madagascar',1],['Iceland',1],['Cuba',1],['Sicily',2],['Sardinia',3],['Borneo',3],['Sumatra',3],['Java',2],['Tasmania',3],['Honshu',3],['Hokkaido',3],['Svalbard',4],['Spitsbergen',4],['Socotra',4],['Zanzibar',3],['Skye',3,'Isle of Skye'],['Baffin Island',4],['Ellesmere Island',4],['Sulawesi',4],['Luzon',3],['Mindanao',4],['Corsica',3],['Crete',2],['Cyprus',2],['Jeju',4]]),
  topic('mountains','Peak curiosity','Name a mountain.','world','mixed','Mountain',[
  ['Mount Everest',1,'Everest'],['K2',2],['Kilimanjaro',2,'Mount Kilimanjaro'],['Mount Fuji',2,'Fuji'],['Mont Blanc',2],['Denali',3,'Mount McKinley'],['Matterhorn',2],['Aconcagua',3],['Annapurna',3],['Lhotse',4],['Makalu',4],['Dhaulagiri',4],['Manaslu',4],['Nanga Parbat',4],['Kangchenjunga',4,'Kanchenjunga'],['Mount Elbrus',3,'Elbrus'],['Mount Etna',3,'Etna'],['Mount Erebus',4,'Erebus'],['Vinson Massif',4,'Mount Vinson'],['Pico Duarte',4]]),
  topic('african-nations','One continent, many answers','Name a sovereign country in Africa.','world','mixed','List_of_sovereign_states_and_dependent_territories_in_Africa',[
@@ -258,3 +258,8 @@ const unMembers=expandedRare.find(t=>t.id==='nations');
 unMembers.source='https://research.un.org/en/unmembers/currentmembers';
 unMembers.scope='The 193 UN member states. Common English names and UN name variants are accepted. Non-member observers and territories are excluded.';
 unMembers.finite=true;
+
+// Svalbard is an archipelago; Spitsbergen is one of its individual islands.
+// Primary reference: https://www.regjeringen.no/en/documents/meld.-st.-26-20232024/id3041130/?ch=1
+const islandPlaces=expandedRare.find(t=>t.id==='islands');
+islandPlaces.scope='Single islands and island groups (archipelagos) are both accepted. Svalbard is an archipelago; Spitsbergen is an individual island.';

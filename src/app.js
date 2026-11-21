@@ -1,4 +1,5 @@
 import {enrichDeck,readPreparedDeck} from './prepared-deck.js';
+import {createOperationGate} from './operation-gate.js';
 import {getCachedReview,addCachedReview} from './review-cache.js';
 import {createDiveScene} from './dive-scene.js';
 import {diveScreen} from './dive-ui.js';
@@ -9,7 +10,8 @@ import {GAMES,TITLES,TIERS,utcDay,shuffle,createSession,view,play,restore} from 
 const main=document.querySelector('main'), modal=document.querySelector('#modal');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let mode='daily',game=null,session=null,selected=[],draft='',message='',feedback=null,timer,volatile=false;
-let diveStarted=false,diveReveal=null,diveSuggestion=null,aiReady=null,aiBusy=false,aiMessage='',remaining=30000,lastTick=0,diveClock=null,requestController=null,motion='';
+let diveStarted=false,diveReveal=null,diveSuggestion=null,aiReady=null,aiBusy=false,aiMessage='',remaining=30000,lastTick=0,diveClock=null,motion='';
+const aiOperations=createOperationGate();
 const memory=new Map();
 function read(key,fallback){if(memory.has(key))return memory.get(key);try{return JSON.parse(localStorage.getItem('offbeat:'+key))??fallback;}catch{volatile=true;return memory.get(key)??fallback;}}
 function write(key,value){memory.set(key,value);try{localStorage.setItem('offbeat:'+key,JSON.stringify(value));}catch{volatile=true;}}
@@ -50,28 +52,31 @@ function result(v){
   return `<div class="result-panel"><span class="eyebrow">${mode==='daily'?'DAILY COMPLETE':'ROUND COMPLETE'}</span><h2>${title}</h2><p>${game==='rare'?`<strong>${v.score}</strong> / 700 points`:game==='word'?v.won?`Solved in <strong>${v.rows.length}</strong> of 6 guesses.`:`The word was <strong>${v.p}</strong>.`:`<strong>${v.solved.length}</strong> of 4 groups found · ${v.misses.length} mistake${v.misses.length===1?'':'s'}.`}</p><div class="result-actions"><button class="button ${game==='rare'?'lavender':game==='word'?'mint':'peach'}" data-action="next">${mode==='daily'?'Play unlimited':'Play another'}</button><button class="button outline" data-action="share">Share result</button></div>${mode==='daily'?'<p class="muted">A fresh daily arrives at 00:00 UTC. Unlimited is always open.</p>':''}</div>`;
 }
 function rare(v){return diveScreen({s:session,v,started:diveStarted,reveal:diveReveal,aiReady,aiBusy,aiMessage,suggestion:diveSuggestion,message,pace:divePace,level:diveLevel,theme:diveTheme,source:diveSource,remaining,selector:selector(),tiers:TIERS});}
-function stopDive(){launchUntil=0;clearInterval(diveClock);diveClock=null;requestController?.abort();requestController=null;aiBusy=false;diveReveal=null;}
+function cancelAI(){aiOperations.cancel();aiBusy=false;}
+function stopDive(){launchUntil=0;clearInterval(diveClock);diveClock=null;cancelAI();diveReveal=null;}
 function startClock(){clearInterval(diveClock);lastTick=performance.now();diveClock=setInterval(()=>{const now=performance.now(),elapsed=now-lastTick;lastTick=now;if(launchUntil>now){const n=document.querySelector('#launch-seconds');if(n)n.textContent=Math.ceil((launchUntil-now)/1000);return;}if(document.querySelector('.launch-count')){document.querySelector('.launch-count').remove();document.querySelector('.dive-screen')?.classList.remove('launching');if(!matchMedia('(pointer: coarse)').matches)document.querySelector('#answer')?.focus({preventScroll:true});}if(game!=='rare'||!session||!diveStarted||diveReveal||aiBusy||modal.open||document.hidden||session.pace==='relaxed'||view(bank,session).done)return;remaining=Math.max(0,remaining-elapsed);const counter=document.querySelector('#seconds-left'),fill=document.querySelector('#timer-fill');if(counter)counter.textContent=Math.ceil(remaining/1000);if(fill)fill.style.width=remaining/300+'%';document.querySelector('.round-timer')?.classList.toggle('urgent',remaining<=10000);if(remaining===0)submit({type:'timeout'});},100);}
 async function checkAIConnection(){try{const r=await fetch(AI_ENDPOINT+'/status',{signal:AbortSignal.timeout(6000)});const data=await r.json();aiReady=r.ok&&data.ready===true;}catch{aiReady=false;}if(game==='rare'&&!diveStarted&&!aiBusy)renderGame();}
-async function aiCall(path,body){requestController?.abort();const controller=new AbortController();requestController=controller;const timeout=setTimeout(()=>controller.abort(),80000);try{const res=await fetch(AI_ENDPOINT+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal});const data=await res.json();if(!res.ok)throw new Error(data.message||'The AI lookout is unavailable. Curated play is ready.');return data;}finally{clearTimeout(timeout);if(requestController===controller)requestController=null;}}
+async function aiCall(path,body,operation){const timeout=setTimeout(()=>operation.controller.abort(),80000);try{const res=await fetch(AI_ENDPOINT+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:operation.controller.signal});const data=await res.json();if(!res.ok)throw new Error(data.message||'The AI lookout is unavailable. Curated play is ready.');return data;}finally{clearTimeout(timeout);}}
 function nextAISettings(){const count=read('ai-count',0);return {theme:diveTheme,level:diveLevel,slot:Number.isInteger(count)?count%4:0};}
-function preparedSlot(q){return 'prepared-deck:'+bank.version+':'+q.theme+':'+q.level+':'+q.slot;}
+function preparedSlot(q){return 'prepared-deck:3:'+bank.version+':'+q.theme+':'+q.level+':'+q.slot;}
+function samePreparation(q,key){const current=nextAISettings();return game==='rare'&&session?.key===key&&!diveStarted&&mode==='unlimited'&&diveSource==='ai'&&q.theme===current.theme&&q.level===current.level&&q.slot===current.slot;}
+function preparationMessage(){const q=nextAISettings();return readPreparedDeck(read(preparedSlot(q),null),q.theme,q.level,q.slot)?'AI expedition ready · saved ahead of play.':'Take the plunge to prepare questions for these settings.';}
 async function prepareAI(){
  if(aiBusy||game!=='rare'||diveStarted||mode!=='unlimited'||diveSource!=='ai')return null;
  const q=nextAISettings(),cached=readPreparedDeck(read(preparedSlot(q),null),q.theme,q.level,q.slot);
  if(cached){aiMessage='AI expedition ready · saved ahead of play.';renderGame();return cached;}
- aiBusy=true;aiMessage='AI is preparing your questions ahead of play. This first preparation can take a moment.';renderGame();const key=session.key;
- try{const result=await aiCall('/round',q);if(result.kind!=='ai-expedition'||result.format!==2||!validDeck(result.topics)||typeof result.roundId!=='string')throw new Error('This AI draft failed the puzzle checks. Choose Ready to play.');write(preparedSlot(q),{savedAt:Date.now(),...q,result});if(game==='rare'&&session?.key===key){aiBusy=false;aiReady=true;aiMessage='AI expedition ready · no generation wait when you start.';renderGame();}return result;}
- catch(e){if(game==='rare'&&session?.key===key){aiBusy=false;aiMessage=diveSource==='ai'?e.message:'';renderGame();}return null;}
+ const operation=aiOperations.begin();aiBusy=true;aiMessage='AI is preparing your questions ahead of play. This first preparation can take a moment.';renderGame();const key=session.key;
+ try{const result=await aiCall('/round',q,operation);if(!aiOperations.isCurrent(operation)||!samePreparation(q,key))return null;if(result.kind!=='ai-expedition'||result.format!==2||!validDeck(result.topics)||typeof result.roundId!=='string')throw new Error('This AI draft failed the puzzle checks. Choose Ready to play.');write(preparedSlot(q),{savedAt:Date.now(),...q,result});aiOperations.finish(operation);aiBusy=false;aiReady=true;aiMessage='AI expedition ready · no generation wait when you start.';renderGame();return result;}
+ catch(e){if(!aiOperations.isCurrent(operation)||!samePreparation(q,key))return null;aiOperations.finish(operation);aiBusy=false;aiMessage=e.name==='AbortError'?'AI preparation timed out. Try again or choose Ready to play.':e.message;renderGame();return null;}
 }
 async function beginDive(){
  if(aiBusy)return;
  session={...session,pace:divePace,level:diveLevel,theme:diveTheme};
  if(diveSource==='ai'&&mode==='unlimited'){
-  const key=session.key,result=await prepareAI();if(!result||game!=='rare'||session?.key!==key)return;
+  const key=session.key,q=nextAISettings(),result=await prepareAI();if(!result||!samePreparation(q,key))return;
   const deck=enrichDeck(bank,result.topics);if(!validDeck(deck)){aiMessage='This deck did not pass validation. Choose Ready to play.';renderGame();return;}
   const count=read('ai-count',0);write('ai-count',(Number.isInteger(count)?count:0)+1);
-  session=createSession(bank,'rare',mode,key,{pace:divePace,level:diveLevel,theme:diveTheme,deck,roundId:result.roundId});aiMessage='';
+  session=createSession(bank,'rare',mode,key,{pace:divePace,level:q.level,theme:q.theme,deck,roundId:result.roundId});aiMessage='';
  }
  launchUntil=performance.now()+2400;diveStarted=true;diveReveal=null;diveSuggestion=null;remaining=30000;message='';keep();renderGame(true);window.scrollTo({top:0,behavior:'instant'});startClock();
 }
@@ -81,9 +86,10 @@ async function checkWithAI(){
  const before=view(bank,session),key=session.key,topicId=before.topic.id;
  const cached=getCachedReview(read('review-cache:'+bank.version,[]),before.topic,input);if(cached){submit({type:'answer',answer:input,review:cached});return;}
  const local=resolveAnswer(before.topic,input);if(local.status==='accepted'){submit({type:'answer',answer:input});return;}
- aiBusy=true;message='';aiMessage='';renderGame();
- try{const data=await aiCall('/check',{topicId,answer:input,...(session.roundId?{roundId:session.roundId}:{})});if(game!=='rare'||session?.key!==key||view(bank,session).topic?.id!==topicId)return;aiBusy=false;if(data.decision==='accepted'){aiReady=true;write('review-cache:'+bank.version,addCachedReview(read('review-cache:'+bank.version,[]),before.topic,input,data));submit({type:'answer',answer:input,review:data});return;}message=data.message||'AI could not confirm it. No penalty. Try another, use a hint, or pass.';}
- catch(e){if(game!=='rare'||session?.key!==key)return;aiBusy=false;message=e.name==='AbortError'?'Review canceled. No penalty.':e.message;}
+ const operation=aiOperations.begin();aiBusy=true;message='';aiMessage='';renderGame();
+ const stillReviewing=()=>aiOperations.isCurrent(operation)&&game==='rare'&&session?.key===key&&view(bank,session).index===before.index&&view(bank,session).topic?.id===topicId;
+ try{const data=await aiCall('/check',{topicId,answer:input,...(session.roundId?{roundId:session.roundId}:{})},operation);if(!stillReviewing())return;aiOperations.finish(operation);aiBusy=false;if(data.decision==='accepted'){aiReady=true;write('review-cache:'+bank.version,addCachedReview(read('review-cache:'+bank.version,[]),before.topic,input,data));submit({type:'answer',answer:input,review:data});return;}message=data.message||'AI could not confirm it. No penalty. Try another, use a hint, or pass.';}
+ catch(e){if(!stillReviewing())return;aiOperations.finish(operation);aiBusy=false;message=e.name==='AbortError'?'The AI review timed out. Try another answer or pass. No penalty.':e.message;}
  renderGame(true);const inputNode=document.querySelector('#answer');if(inputNode)inputNode.value=input;lastTick=performance.now();
 }
 function word(v){
@@ -126,7 +132,7 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.mode){if(mode===b.dataset.mode)return;mode=b.dataset.mode;game?start(game):home();return;}
   if(b.dataset.pace){divePace=b.dataset.pace;write('dive-pace',divePace);session={...session,pace:divePace};renderGame();return;}
-  if(b.dataset.source){diveSource=b.dataset.source;aiMessage='';if(diveSource==='curated'){requestController?.abort();aiBusy=false;}renderGame();if(diveSource==='ai')prepareAI();return;}
+  if(b.dataset.source){if(diveSource===b.dataset.source&&aiBusy)return;cancelAI();diveSource=b.dataset.source;aiMessage='';renderGame();if(diveSource==='ai')prepareAI();return;}
   if(b.dataset.confirm){submit({type:'answer',answer:b.dataset.confirm});return;}
   if(b.dataset.game){start(b.dataset.game);document.querySelector('#main').scrollIntoView();return;}
   if(b.dataset.tile){const w=b.dataset.tile;const i=selected.indexOf(w);if(i>=0)selected.splice(i,1);else if(selected.length<4)selected.push(w);else{toast('Four selected. Deselect a word to change it.');return;}b.classList.toggle('selected',selected.includes(w));b.setAttribute('aria-pressed',String(selected.includes(w)));const submitButton=document.querySelector('[data-action=submit-group]');submitButton.disabled=selected.length!==4;submitButton.textContent='Submit '+selected.length+'/4';document.querySelector('[data-action=deselect]').disabled=selected.length===0;return;}
@@ -138,7 +144,7 @@ document.addEventListener('click',e=>{
     case 'continue-dive':if(document.querySelector('.is-plunging'))return;diveReveal=null;remaining=30000;message='';renderGame(true);window.scrollTo({top:0,behavior:'instant'});startClock();break;
     case 'hint':submit({type:'hint'});break;
     case 'ai-check':checkWithAI();break;
-    case 'cancel-check':requestController?.abort();aiBusy=false;message='Review canceled. Try another answer or pass. No penalty.';renderGame(true);break;
+    case 'cancel-check':cancelAI();message='Review canceled. Try another answer or pass. No penalty.';renderGame(true);break;
     case 'next':modal.close();mode='unlimited';start(game,true);break;
     case 'share':share();break;
     case 'shuffle':shuffleCount++;motion='shuffle';renderGame();break;
@@ -148,14 +154,14 @@ document.addEventListener('click',e=>{
 });
 document.querySelectorAll('.brand,.nav-games').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();home();}));
 document.addEventListener('submit',e=>{if(e.target.id==='rare-form'){e.preventDefault();submit({type:'answer',answer:document.querySelector('#answer').value});}if(e.target.id==='word-form'){e.preventDefault();submit({word:draft});}});
-function updateDraft(value){draft=value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,5);const input=document.querySelector('#answer');if(input)input.value=draft;const row=document.querySelectorAll('.word-row')[session.actions.length];row?.querySelectorAll('.letter').forEach((n,i)=>{n.textContent=draft[i]||'';n.classList.toggle('has-letter',!!draft[i]);n.setAttribute('aria-label',draft[i]||'empty');});}
+function updateDraft(value){const next=value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,5);if(next!==draft){message='';const status=document.querySelector('#game-message');if(status)status.textContent='';}draft=next;const input=document.querySelector('#answer');if(input)input.value=draft;const row=document.querySelectorAll('.word-row')[session.actions.length];row?.querySelectorAll('.letter').forEach((n,i)=>{n.textContent=draft[i]||'';n.classList.toggle('has-letter',!!draft[i]);n.setAttribute('aria-label',draft[i]||'empty');});}
 document.addEventListener('input',e=>{if(game==='rare'&&e.target.id==='answer')diveScene?.type();if(game==='word'&&e.target.id==='answer')updateDraft(e.target.value);});
 function keyInput(key){if(game!=='word'||view(bank,session).done)return;if(key==='ENTER'){submit({word:draft});return;}if(key==='BACKSPACE')updateDraft(draft.slice(0,-1));else if(/^[A-Z]$/.test(key))updateDraft(draft+key);}
 document.addEventListener('keydown',e=>{if(modal.open||game!=='word'||e.ctrlKey||e.metaKey||e.altKey||view(bank,session).done||e.target.matches('input,textarea'))return;const key=e.key.toUpperCase();if(e.target.matches('button')&&(key==='ENTER'||key===' '))return;if(/^[A-Z]$/.test(key)||['ENTER','BACKSPACE'].includes(key)){e.preventDefault();keyInput(key);}});
 modal.addEventListener('click',e=>{if(e.target===modal){const r=modal.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)modal.close();}});
 home();
 
-document.addEventListener('change',e=>{if(e.target.id==='dive-level'){diveLevel=e.target.value;write('dive-level',diveLevel);}if(e.target.id==='dive-theme'){diveTheme=e.target.value;write('dive-theme',diveTheme);}if(game==='rare'&&!diveStarted&&(e.target.id==='dive-level'||e.target.id==='dive-theme')){session={...session,level:diveLevel,theme:diveTheme};keep();}});
+document.addEventListener('change',e=>{if(e.target.id==='dive-level'){diveLevel=e.target.value;write('dive-level',diveLevel);}if(e.target.id==='dive-theme'){diveTheme=e.target.value;write('dive-theme',diveTheme);}if(game==='rare'&&!diveStarted&&(e.target.id==='dive-level'||e.target.id==='dive-theme')){cancelAI();session={...session,level:diveLevel,theme:diveTheme};aiMessage=diveSource==='ai'?preparationMessage():'';keep();renderGame();}});
 
 function syncDiveViewport(){const root=document.querySelector('.flight-game');if(!root)return;const h=window.visualViewport?.height||window.innerHeight;root.style.setProperty('--game-height',h+'px');root.classList.toggle('rb-compact',h<550);}
 window.visualViewport?.addEventListener('resize',syncDiveViewport);

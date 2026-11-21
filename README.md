@@ -15,7 +15,7 @@ A pixel-ocean expedition with an original bird pilot, moving depth zones, staged
 - Unlisted answers offer an optional, cancellable **AI review**. Accepted reviews are cached locally for seven days, matched to the full question semantics, for immediate reuse. The timer pauses while checking; uncertainty or service failure never marks an answer wrong or costs a life.
 - **AI expedition** in Unlimited prepares ahead of play and saves four variations per theme/difficulty for quick reuse. It asks AI to compose seven rounds from vetted topics and compatible letter/word constraints. Prompts and accepted examples are then constructed and checked by the server. Extra AI-checked answers remain provisional; AI can still make judgment errors.
 
-The local starter bank now has **40 topics**, including broad everyday prompts with 973 accepted answers and 187 additional aliases, including all 193 UN members. Its familiarity tiers remain estimates, not measured player popularity. Daily Rarebird balances four easy, two mixed and one hard prompt. The new `dive-2` rules begin a fresh Rarebird edition; existing Fivefold and Common Ground daily choices and progress remain compatible.
+The local starter bank now has **40 topics**, including broad everyday prompts with 974 accepted answers and 187 additional aliases, including all 193 UN members. Its familiarity tiers remain estimates, not measured player popularity. Daily Rarebird balances four easy, two mixed and one hard prompt. The new `dive-2` rules begin a fresh Rarebird edition; existing Fivefold and Common Ground daily choices and progress remain compatible.
 
 ## Fivefold and Common Ground
 

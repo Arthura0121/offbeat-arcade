@@ -22,7 +22,7 @@ export function validDeck(deck){return Array.isArray(deck)&&deck.length===7&&dec
 export function validReview(review,topic,answer){return !!review&&review.kind==='ai-answer'&&review.decision==='accepted'&&review.topicId===topic.id&&review.input===cleanAnswer(answer)&&text(review.canonical,100)&&Number.isInteger(review.tier)&&!!RARE_TIERS[review.tier]&&text(review.explanation,500)&&/^https:\/\/en\.wikipedia\.org\/wiki\//.test(review.source||'');}
 export function rareView(topics,s){
  const rounds=[];let hinted=false,lives=3;
- for(const a of s.actions){if(a.type==='hint'){hinted=true;continue;}const topic=topics[rounds.length];let answer=null,basis='bank';if(a.type==='answer'){const match=resolveAnswer(topic,a.answer);answer=match.status==='accepted'?match.answer:{name:a.review.canonical,tier:a.review.tier,aliases:[]};basis=match.status==='accepted'?'bank':'ai';}if(a.type==='timeout')lives--;const points=answer?Math.min(RARE_TIERS[answer.tier].points,hinted?25:100):0;rounds.push({topic,answer,points,hinted,basis,reason:a.type,review:a.review||null});hinted=false;}
+ for(const a of s.actions){if(a.type==='hint'){hinted=true;continue;}const topic=topics[rounds.length];let answer=null,basis='bank';if(a.type==='answer'){const match=resolveAnswer(topic,a.answer);const reviewed=validReview(a.review,topic,a.answer);answer=reviewed?{name:a.review.canonical,tier:a.review.tier,aliases:[]}:match.answer;basis=reviewed?'ai':'bank';}if(a.type==='timeout')lives--;const points=answer?Math.min(RARE_TIERS[answer.tier].points,hinted?25:100):0;rounds.push({topic,answer,points,hinted,basis,reason:a.type,review:a.review||null});hinted=false;}
  const score=rounds.reduce((n,r)=>n+r.points,0),done=rounds.length===7||lives===0;
  return {p:topics,rounds,score,depth:score*10,lives,hinted,done,won:rounds.length===7&&lives>0,index:rounds.length,topic:topics[rounds.length]};
 }
@@ -35,8 +35,9 @@ export function rareMove(topics,s,action){
  else if(action.type==='answer'){
   if(!text(action.answer,100))throw new Error('Type an answer first.');
   const match=resolveAnswer(v.topic,action.answer);
-  if(match.status==='accepted')move={type:'answer',answer:match.answer.name};
-  else if(validReview(action.review,v.topic,action.answer))move={type:'answer',answer:action.answer,review:action.review};
+  // Keep an accepted review's rating and provenance stable when later bank additions recognize it.
+  if(validReview(action.review,v.topic,action.answer))move={type:'answer',answer:action.answer,review:action.review};
+  else if(match.status==='accepted')move={type:'answer',answer:match.answer.name};
   else throw new Error(match.status==='suggestion'?`Did you mean ${match.answer.name}? Confirm the suggestion, or ask AI to check your answer.`:'Not in our bank yet. Ask AI to check it, try another answer, or pass. No penalty.');
  }else throw new Error('Unknown round action.');
  return {...s,actions:[...s.actions,move]};

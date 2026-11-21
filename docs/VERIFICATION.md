@@ -8,7 +8,7 @@ All **31 tests** pass, covering the three games, deterministic UTC dailies, reta
 
 Additional backend tests enumerate all constructed remix options and check that every accepted example satisfies its letter/word constraint. Invented plan IDs cannot become decks. Generated UN-membership rounds are tested for the same direct-reference retrieval as the base topic. A confident model verdict with an invented quote is rejected; a direct supporting reference can produce a provisional acceptance.
 
-`npm run build`, starter-bank validation and standalone-script syntax checks pass. The bank contains 40 Rarebird topics, 973 accepted answers and 187 additional aliases, plus the existing 1,235 word guesses and 24 grouping puzzles for new rounds (the original 12 are retained for saved-game replay).
+`npm run build`, starter-bank validation and standalone-script syntax checks pass. The bank contains 40 Rarebird topics, 974 accepted answers and 187 additional aliases, plus the existing 1,235 word guesses and 24 grouping puzzles for new rounds (the original 12 are retained for saved-game replay).
 
 ## Browser checks
 
@@ -31,3 +31,13 @@ Connections variety update: 32 tests pass, including every new puzzle solving, n
 
 
 Pixel-ocean update: 45 tests pass, including all 193 UN members, reference-check failures, seven-day semantic review caching, AI-deck expiry and constrained local-answer enrichment. Licensed independent OpenKrillion renderer/art and bundled VT323 font replace the earlier procedural diving bell. Listed answers resolve synchronously; new live AI reviews remain optional and can take seconds. No audio code was imported.
+
+## QA pass — November 21, 2026
+
+- 56 automated checks pass, including actual-controller asynchronous cancellation/retry tests and preservation of historical AI-reviewed scores/provenance after bank expansion.
+- Checked desktop, 390px and 320px phone layouts, plus a short landscape viewport. Corrected Fivefold input/error contrast, low-contrast card copy, grid sizing, frame padding, narrow-screen word wrapping and Rarebird progress placement. Short-screen result panels can scroll to their controls.
+- Played word guesses and invalid guesses; verified a selected Common Ground group survives Shuffle and scores correctly. Tested Rarebird's launch, invalid-answer no-penalty path, timeout/life loss and the pause menu: the visible clock stayed at seven seconds while paused, then resumed.
+- Corrected the island prompt to include archipelagos while retaining old saved Svalbard answers; Spitsbergen is now independently accepted. New AI deck caches use a fresh content revision so newly prepared decks receive the corrected wording.
+- Clean builds now remove obsolete generated files and produce the same deployment revision on repeated builds of unchanged source.
+
+Browser checks use desktop and phone-sized viewports, not a physical-device certification. AI semantic reviews remain provisional; provider quotas/outages can still stop new reviews while prepared play remains available.
